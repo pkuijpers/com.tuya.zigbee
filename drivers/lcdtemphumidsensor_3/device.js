@@ -59,7 +59,9 @@ class lcdtemphumidsensor3 extends TuyaSpecificClusterDevice {
   async onNodeInit({ zclNode }) {
     this.printNode();
 
+    // Listen to both "reporting" and "response" events since different device variants use different event types
     zclNode.endpoints[1].clusters.tuya.on("reporting", value => this.processResponse(value));
+    zclNode.endpoints[1].clusters.tuya.on("response", value => this.processResponse(value));
   }
 
 
@@ -67,6 +69,9 @@ class lcdtemphumidsensor3 extends TuyaSpecificClusterDevice {
     const dp = data.dp;
     const measuredValue = getDataValue(data);
     let parsedValue = 0;
+
+    // Debug logging - log all incoming datapoints
+    this.log(`[DEBUG] Received DP: ${dp}, datatype: ${data.datatype}, raw data: [${data.data}], parsed value: ${measuredValue}`);
 
     switch (dp) {
       case dataPoints.batteryLevel:
@@ -80,7 +85,9 @@ class lcdtemphumidsensor3 extends TuyaSpecificClusterDevice {
 
       case dataPoints.currentHumidity:
         const humidityOffset = this.getSetting('humidity_offset') || 0;
-        parsedValue = measuredValue/10;
+        // Some devices send humidity as 0-100, others as 0-1000 (value * 10)
+        // Auto-detect based on value: if > 100, divide by 10
+        parsedValue = measuredValue > 100 ? measuredValue / 10 : measuredValue;
         this.log('measure_humidity | relativeHumidity - measuredValue (humidity):', parsedValue, '+ humidity offset', humidityOffset);
 
         this.setCapabilityValue('measure_humidity', parsedValue + humidityOffset).catch(this.error);
