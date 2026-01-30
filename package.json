@@ -35,5 +35,8 @@
   "dependencies": {
     "homey-zigbeedriver": "^2.1.4",
     "zigbee-clusters": "^2.4.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.2"
   }
 }
